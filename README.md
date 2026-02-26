@@ -6,7 +6,7 @@ Things that you need for this:
 <li>ESP32-C3-supermini</li>
 <li>LED matrix for sets drums samples on grid</li>
 <li>SSD1306 display</li>
-<li>DFPlayer for playing samples from SD card</li>
+<li>DFPlayer for playing samples from SD card (You can copy all folders from SAMPLES to root of SD card)</li>
 <li>5 buttons</li>
 </ul>
 <h2>Keys combinations:</h2>
