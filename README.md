@@ -9,6 +9,7 @@ Things that you need for this:
 <li>SSD1306 display</li>
 <li>DFPlayer for playing samples from SD card (You can copy all folders from SAMPLES to root of SD card)</li>
 <li>5 buttons</li>
+ <li>Speaker and (or) audio 3.5mm</li>
 </ul>
 <h2>Keys combinations:</h2>
 <ul>
