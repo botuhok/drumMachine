@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include "freertos/FreeRTOS.h"
 #include "presets.h"
-#define VERSION "0.4 (05/02/2026)"
+#define VERSION "0.5 (27/02/2026)"
 
 #define SLEEPMODE true                  // do you need sleep mode or not? SLEEPAFTER - minutes when not playing and
                                         // not pressing before sleep

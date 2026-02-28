@@ -140,18 +140,61 @@ esp_err_t i2c_ssd1306_buffer_fill_pixel(i2c_ssd1306_handle_t *i2c_ssd1306, uint8
     uint8_t page = y / 8;
     uint8_t bit = 1 << (y % 8);
     uint16_t index = page * i2c_ssd1306->width + x;
-    if (fill)
-    {
-        i2c_ssd1306->buffer[index] |= bit;
-    }
-    else
-    {
-        i2c_ssd1306->buffer[index] &= ~bit;
-    }
+    if (fill) i2c_ssd1306->buffer[index] |= bit;
+    else i2c_ssd1306->buffer[index] &= ~bit;
 
     return ESP_OK;
 }
 
+esp_err_t i2c_ssd1306_circle(i2c_ssd1306_handle_t *i2c_ssd1306, uint8_t xc, uint8_t yc, uint8_t r, bool fill){
+    // check coords and screen edge
+    if (xc >= i2c_ssd1306->width || yc >= i2c_ssd1306->height ||
+        yc - r < 0 || xc - r < 0 ||
+        yc + r > i2c_ssd1306->height ||
+        xc + r > i2c_ssd1306->width) {
+        ESP_LOGE(ESP_SSD1306_TAG, "Invalid coordinates for circle!");
+        return ESP_ERR_INVALID_ARG;
+    }
+    int16_t x = 0;
+    int16_t y = r;
+    int16_t delta = 1 - 2 * r;
+    int16_t error = 0;
+    
+    while (y >= x) {
+        if (fill) {
+            for (int16_t i = xc - x; i <= xc + x; i++) {
+                i2c_ssd1306_buffer_fill_pixel(i2c_ssd1306, i, yc + y, true);
+                i2c_ssd1306_buffer_fill_pixel(i2c_ssd1306, i, yc - y, true);
+            }
+            for (int16_t i = xc - y; i <= xc + y; i++) {
+                i2c_ssd1306_buffer_fill_pixel(i2c_ssd1306, i, yc + x, true);
+                i2c_ssd1306_buffer_fill_pixel(i2c_ssd1306, i, yc - x, true);
+            }
+        } else {
+            i2c_ssd1306_buffer_fill_pixel(i2c_ssd1306, xc + x, yc + y, true);
+            i2c_ssd1306_buffer_fill_pixel(i2c_ssd1306, xc - x, yc + y, true);
+            i2c_ssd1306_buffer_fill_pixel(i2c_ssd1306, xc + x, yc - y, true);
+            i2c_ssd1306_buffer_fill_pixel(i2c_ssd1306, xc - x, yc - y, true);
+            i2c_ssd1306_buffer_fill_pixel(i2c_ssd1306, xc + y, yc + x, true);
+            i2c_ssd1306_buffer_fill_pixel(i2c_ssd1306, xc - y, yc + x, true);
+            i2c_ssd1306_buffer_fill_pixel(i2c_ssd1306, xc + y, yc - x, true);
+            i2c_ssd1306_buffer_fill_pixel(i2c_ssd1306, xc - y, yc - x, true);
+        }
+        
+        error = 2 * (delta + y) - 1;
+        if ((delta < 0) && (error <= 0)) {
+            delta += 2 * ++x + 1;
+            continue;
+        }
+        if ((delta > 0) && (error > 0)) {
+            delta -= 2 * --y + 1;
+            continue;
+        }
+        delta += 2 * (++x - --y);
+    }
+    return ESP_OK;
+
+}
 esp_err_t i2c_ssd1306_buffer_fill_space(i2c_ssd1306_handle_t *i2c_ssd1306, uint8_t x1, uint8_t x2, uint8_t y1, uint8_t y2, bool fill)
 {
     if (x1 >= i2c_ssd1306->width || x2 >= i2c_ssd1306->width || y1 >= i2c_ssd1306->height || y2 >= i2c_ssd1306->height || x1 > x2 || y1 > y2)
@@ -168,33 +211,21 @@ esp_err_t i2c_ssd1306_buffer_fill_space(i2c_ssd1306_handle_t *i2c_ssd1306, uint8
     for (uint8_t page = start_page; page <= end_page; page++)
     {
         if (start_page == end_page)
-        {
             mask = (0xFF << offset_start) & (0xFF >> (7 - offset_end));
-        }
         else if (page == start_page)
-        {
             mask = 0xFF << offset_start;
-        }
         else if (page == end_page)
-        {
             mask = 0xFF >> (7 - offset_end);
-        }
         else
-        {
             mask = 0xFF;
-        }
 
         for (uint8_t col = x1; col <= x2; col++)
         {
             uint16_t index = page * i2c_ssd1306->width + col;
             if (fill)
-            {
                 i2c_ssd1306->buffer[index] |= mask;
-            }
             else
-            {
                 i2c_ssd1306->buffer[index] &= ~mask;
-            }
         }
     }
 
@@ -236,15 +267,11 @@ esp_err_t i2c_ssd1306_buffer_text(i2c_ssd1306_handle_t *i2c_ssd1306, uint8_t x, 
             uint8_t char_col = char_data[j];
 
             if (invert)
-            {
                 char_col = ~char_col;
-            }
 
             uint16_t index = page * i2c_ssd1306->width + x + j;
             if (offset == 0)
-            {
                 i2c_ssd1306->buffer[index] |= char_col;
-            }
             else
             {
                 uint8_t lower_part = char_col << offset;

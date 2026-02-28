@@ -128,6 +128,25 @@ esp_err_t i2c_ssd1306_buffer_fill_pixel(i2c_ssd1306_handle_t *i2c_ssd1306, uint8
  *
  * @return ESP_OK on success, or an error code otherwise.
  */
+
+
+esp_err_t i2c_ssd1306_circle(i2c_ssd1306_handle_t *i2c_ssd1306, uint8_t xc, uint8_t yc, uint8_t r, bool fill);
+/**
+ * @brief Draw circle in the SSD1306 buffer.
+ *
+ * Draw circle by x, y coords center and radius.
+ *
+ * @param i2c_ssd1306 Pointer to the SSD1306 handle.
+ * @param xc          X-coordinate of the center of circle.
+ * @param yc          Y-coordinate of the center of circle.
+ * @param r           Radius of circle.
+ * @param fill        If true, circle are filling; if false, circle are only contour.
+ * 
+ *
+ * @return ESP_OK on success, or an error code otherwise.
+ */
+
+
 esp_err_t i2c_ssd1306_buffer_fill_space(i2c_ssd1306_handle_t *i2c_ssd1306, uint8_t x1, uint8_t x2, uint8_t y1, uint8_t y2, bool fill);
 
 /**

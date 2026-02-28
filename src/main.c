@@ -4,22 +4,6 @@ TODO:
  - add animation in startup function
  - adjust volume on samples and may be choose better samples
  - False set drums when use combination keys ! 
-
-drumMachine v0.4
-  -- added play drum when drum hit set by enter key
-  -- added empty preset
-  -- renamed "Sound" to "Kit" in menu
-
-drumMachine v0.3
-  -- added presets, now you can choose it in menu!
-     MENUVALUES[5] = index in PRESETS array
-  -- added change pattern to 0 or to PATTERNS (max pattern number) when cursor moving on left/right edge
-  -- added vTaskDelay if for cycle when processed buttons, but Enter still sometimes set/unset drum when you go to menu or start playing.
-
-drumMachine v0.2
-  -- added patterns (global PATTERNS = 4), which change in menu or moving cursor on left/right edge.
-     PATTERN = MENUVALUES[4]
-     MENUVALUES[4] = PATTERN
 */
 
 
@@ -30,11 +14,12 @@ drumMachine v0.2
 #include "max.h"
 #include "buttons.h"
 #include <driver/i2c_master.h>
+#include "esp_random.h"
 #include "esp_ssd1306.h"
 #include "serial.h"
 #include "esp_log.h"
 #include "esp_sleep.h"
-#define TAG "DRUM_MACHINE"
+#define TAG "WOODPECKER"
 
 static const uint8_t logo[4][32] = {
     {0x00, 0x00, 0x00, 0xC0, 0x60, 0x18, 0x00, 0x00, 0x70, 0x78, 0x78, 0x78, 0xF8, 0xF8, 0xF0, 0xF0,
@@ -47,13 +32,11 @@ static const uint8_t logo[4][32] = {
      0x4F, 0x40, 0x40, 0x4F, 0x4F, 0x6F, 0x27, 0x20, 0x10, 0x10, 0x08, 0x0C, 0x04, 0x00, 0x00, 0x00},
 };
 
-static const uint8_t lcd_help[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 15, 5, 131, 64, 47, 40, 32, 76, 135, 5, 15, 0, 1, 14, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 223, 21, 21, 10, 0, 15, 208, 16, 223, 0, 1, 223, 1, 192, 65, 95, 65, 0, 206, 145, 17, 206, 0, 31, 2, 4, 31, 192, 82, 85, 149, 9, 192, 64,
-64, 128, 0, 223, 69, 65, 65, 0, 143, 80, 80, 95, 0, 159, 66, 68, 95, 0, 206, 81, 81, 81, 0, 192, 64, 64, 128, 0, 0, 0, 0, 3, 132, 72, 36, 35, 32, 66, 130, 2, 0, 0, 0, 3, 4,
-8, 8, 8, 4, 3, 0, 0, 0, 0, 0, 128, 64, 32, 32, 35, 68, 136, 4, 3, 0, 0, 2, 7, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 241, 82, 20, 23,
-4, 242, 33, 64, 247, 1, 1, 7, 0, 7, 5, 245, 68, 160, 23, 0, 241, 87, 80, 16, 0, 16, 32, 199, 32, 18, 1, 0, 7, 2, 2, 5, 0, 7, 5, 5, 4, 0, 4, 5, 5, 2, 0, 4, 5, 5, 2, 0, 7, 5,
-5, 4, 0, 7, 4, 4, 3, 0, 0, 0, 0, 0, 3, 4, 8, 8, 8, 4, 3, 0, 0, 0, 0, 192, 32, 16, 16, 16, 32, 192, 0, 0, 0, 0, 0, 3, 4, 8, 8, 8, 4, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 28, 34, 65, 65, 65, 34, 28, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0,
-0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 240, 32, 64, 32, 240, 1, 242, 180, 148, 4, 242, 33, 64, 240, 0, 112, 128, 128, 240, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 15, 5, 1, 0, 15, 2, 4, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+static const uint8_t wood[512] = 
+{0,48,208,16,16,16,16,16,16,16,16,16,208,48,0,0,0,0,128,96,16,16,16,16,16,16,16,16,16,16,240,0,0,0,128,96,27,5,1,129,97,25,5,3,1,192,48,8,4,2,2,1,193,49,1,9,9,9,201,49,1,1,1,1,3,198,60,0,0,0,192,48,8,4,2,2,1,193,49,1,9,9,9,201,49,1,1,1,1,3,198,60,0,0,0,192,48,13,3,1,1,1,1,193,49,9,9,9,9,241,1,1,1,1,3,6,4,8,240,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,255,0,128,96,24,6,129,96,24,4,254,0,0,0,0,0,0,0,255,96,24,6,1,128,96,24,6,1,0,0,112,140,3,0,0,0,0,48,76,67,64,64,0,48,12,3,0,0,128,64,48,12,3,0,0,112,140,3,0,0,0,0,48,76,67,64,64,0,48,12,3,0,0,128,64,48,12,3,0,192,48,12,3,0,0,0,0,64,112,76,67,64,64,32,16,12,3,0,0,0,0,128,64,48,12,3,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,15,6,129,96,24,6,1,0,0,0,255,0,128,64,64,32,32,16,16,8,8,4,6,1,0,0,0,0,0,0,0,0,1,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1,0,0,0,0,0,0,0,0,0,1,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1,0,0,0,2,2,3,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,128,64,64,32,32,16,16,8,8,4,6,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,};
+
+static const uint8_t pecker[86] =
+{0,1,3,255,255,0,255,33,33,33,33,51,30,30,12,0,0,60,126,126,219,145,145,145,145,147,90,78,12,0,0,60,126,126,195,129,129,129,129,129,66,102,36,0,129,255,255,255,24,60,60,102,231,195,129,129,0,0,60,126,126,219,145,145,145,145,147,90,78,12,0,129,255,255,0,255,33,33,33,97,97,243,158,158,140,0,};
 
 TaskHandle_t Buttons = NULL;
 TaskHandle_t Blink = NULL;
@@ -151,7 +134,6 @@ void DrawDrums(void *arg){
  */
 void sleepTask(void *arg){
   uint32_t sleepTimeout = SLEEPAFTER * 60 * 1000;
-  // uint32_t sleepTimeout = 30000;
   uint32_t countdownTimer = sleepTimeout;
 
   while(1){
@@ -193,27 +175,27 @@ void startupText(){
   i2c_new_master_bus(&i2c_master_bus_config, &i2c_master_bus);
   i2c_ssd1306_init(i2c_master_bus, &i2c_ssd1306_config, &i2c_ssd1306);
   i2c_ssd1306_buffer_fill(&i2c_ssd1306, false);
+  // show animation
 
-  // show version number
-  for(uint8_t i = 130; i > 20; i -= 10){
-    i2c_ssd1306_buffer_fill_space(&i2c_ssd1306, 0, 127, 0, 31, false);
-    i2c_ssd1306_buffer_text(&i2c_ssd1306, i, 0, "drumMachine", false);
-    i2c_ssd1306_buffer_text(&i2c_ssd1306, 0, 16, VERSION, false);
+  // show Wood
+  for(uint8_t x = 90; x > 0; x-=10){
+    vTaskDelay(pdMS_TO_TICKS(20));
+    i2c_ssd1306_buffer_fill(&i2c_ssd1306, false);
+    i2c_ssd1306_buffer_image(&i2c_ssd1306, x, 0, (const uint8_t *)wood, 128, 32, false);
     i2c_ssd1306_buffer_to_ram(&i2c_ssd1306);
-    vTaskDelay(pdMS_TO_TICKS(200));
+  }
+  for(uint8_t x = 0; x < 8; ++x){
+    vTaskDelay(pdMS_TO_TICKS(50));
+    i2c_ssd1306_buffer_fill(&i2c_ssd1306, false);
+    i2c_ssd1306_buffer_image(&i2c_ssd1306, x, 0, (const uint8_t *)wood, 128, 32, false);
+    i2c_ssd1306_buffer_to_ram(&i2c_ssd1306);
   }
 
-  vTaskDelay(pdMS_TO_TICKS(2000));                     // delay after startup animation before showing help text
+  // show pecker
+  vTaskDelay(pdMS_TO_TICKS(500));
 
-  // show keys help
-  i2c_ssd1306_buffer_fill(&i2c_ssd1306, false);
-  i2c_ssd1306_buffer_image(&i2c_ssd1306, 0, 0, lcd_help, 128, 32, false);
-  
-  
-  //for(uint8_t i = 0; i < 4; ++i){
-  //  i2c_ssd1306_buffer_text(&i2c_ssd1306, 0, i * 8, HELPTEXT[i], false);
-  //}
-  i2c_ssd1306_buffer_to_ram(&i2c_ssd1306); 
+  i2c_ssd1306_buffer_image(&i2c_ssd1306, 41, 21, (const uint8_t *)pecker, 86, 8, false);
+  i2c_ssd1306_buffer_to_ram(&i2c_ssd1306);
 }
 
 /*
