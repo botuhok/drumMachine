@@ -5,9 +5,9 @@ ESP32-C3 drum machine
 Things that you need for this:
 <ul>
 <li>ESP32-C3-supermini</li>
-<li>LED matrix for sets drums samples on grid</li>
-<li>SSD1306 display</li>
-<li>DFPlayer for playing samples from SD card (You can copy all folders from SAMPLES to root of SD card)</li>
+<li>2 x MAX7219 LED-matrix</li>
+<li>SSD1306 OLED display 128x32 with i2c</li>
+<li>DFPlayerMini for playing samples from SD card (You can copy all folders from SAMPLES to root of SD card)</li>
 <li>5 buttons</li>
  <li>Speaker and (or) audio 3.5mm</li>
 </ul>
@@ -24,8 +24,8 @@ The volume of each column is displayed on the OLED display when you are not in m
 <h2>The menu allows you:</h2>
  <ul>
   <li><b>BPM</b> - change the BPM</li>
-  <li><b>Kit</b> - switch to a different set of samples (it is in different folders on SD card</li>
-  <li><b>Shuffle</b> - add some swing</li>
+  <li><b>Kit</b> - switch to a different set of samples (it is in different folders on SD card)</li>
+  <li><b>Swing</b> - add some swing when playing</li>
   <li><b>Volume</b> - set global volume</li>
    <li><b>Pattern</b> - select pattern (now there is 4 patterns)</li>
    <li><b>Preset</b> - select preset for patterns (see presets.c)</li>
