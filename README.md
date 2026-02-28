@@ -68,7 +68,7 @@ For simple and effective OLED library thanks [quackonaut](https://github.com/qua
 - [ ] Sometimes false set drums when use combination keys!
 - [ ] add startup animation on MAX7219
 - [ ] add random generation drums
-- [ ] add woodpecker animation when start playing
+- [X] add woodpecker animation when start playing
 
 
 
